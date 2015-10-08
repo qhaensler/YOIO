@@ -1,0 +1,15 @@
+name = Movies
+description = Features require for YOIO module
+core = 7.x
+package = Features
+version = 7.x-1.0
+dependencies[] = features
+dependencies[] = image
+dependencies[] = node
+dependencies[] = text
+features[features_api][] = api:2
+features[field_base][] = body
+features[field_base][] = field_movie_pochette
+features[field_instance][] = node-movies-body
+features[field_instance][] = node-movies-field_movie_pochette
+features[node][] = movies

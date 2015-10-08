@@ -1,0 +1,9 @@
+name = YOIO (You Only Import One)
+description = Create node with infos from The Movie DB
+package = The Movie Database
+core = 7.x
+php = 5.2
+version = 7.x-1.0
+;files[] = 
+;dependencies[] = 
+stylesheets[all][] = css/add_item.css

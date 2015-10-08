@@ -1,0 +1,136 @@
+<?php
+
+$GLOBALS['apikey'] = '** API KEY **';
+
+function add_item_help($path, $arg)
+{
+    switch ($path) {
+        // Main module help for the block module
+        case 'admin/help#add_item':
+            return '<p>' . t('Hello') . '</p>';
+    }
+}
+
+function add_item_permission()
+{
+    return array(
+        'administer add item module' => array(
+            'title' => t('Administer the add item module'),
+            'description' => t('Perform administration tasks for this module.'),
+        ),
+    );
+}
+
+function add_item_menu()
+{
+    $items['search_item'] = array(
+        'title' => 'Ajouter un film',
+        'page callback' => 'search_item',
+        'access callback' => TRUE,
+    );
+    $items['find_item'] = array(
+        'page callback' => 'find_item',
+        'access callback' => TRUE,
+    );
+    $items['add_item'] = array(
+        'page callback' => 'add_item',
+        'access callback' => TRUE,
+    );
+    return $items;
+}
+
+
+// ---------- SEARCH ITEM ----------
+// Get the movie name
+function search_item()
+{
+    return drupal_get_form('form_add_item');
+}
+function form_add_item($form, &$form_state)
+{
+    $form['movie_title'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Movie Title'),
+        '#description' => t('Enter the movie title.'),
+    );
+    $form['search'] = array(
+        '#type' => 'submit',
+        '#value' => t('Search'),
+    );
+    return $form;
+}
+function form_add_item_validate($form, &$form_state){
+  if(empty($form_state['values']['movie_title'])) {
+    form_set_error('movie_title', t('Field must be register!'));
+  }
+}
+function form_add_item_submit($form, &$form_state){
+    $movieName = $form_state['values']['movie_title'];
+    $form_state['redirect'] = array( 'find_item', array( 'query' => array( 'query' => $movieName, ) ),);
+}
+
+
+// ---------- FIND ITEM ----------
+// Make API Request to get the result the result of the research, display the results
+function find_item()
+{
+    $movieName = $_GET['query'];
+    return searchMovie($movieName);
+}
+
+// ---------- FIND ITEM ----------
+// Make API Request to get the result the result of the research, display the results
+
+function add_item()
+{   
+    $movieID = $_GET['id'];
+    $infos = getMovie($movieID);
+    // Create node
+    $node = new stdClass();
+    // Set some default values
+    $node->type = 'movies';
+    node_object_prepare($node);
+    // Add title
+    $node->title = $infos->title;
+    // Add infos
+    $node->body[LANGUAGE_NONE][0]['value'] = $infos->overview;
+    $node->body[LANGUAGE_NONE][0]['format'] = 'full_html';
+    // Add image
+    $image_url = 'http://image.tmdb.org/t/p/w1000' . $infos->poster_path;
+    $file = system_retrieve_file($image_url, file_default_scheme() . '://movie_poster' . basename($infos->title), TRUE);
+    $node->field_movie_pochette[LANGUAGE_NONE][0] = (array)$file;
+    // // Save the node
+    node_save($node);
+    drupal_goto('<front>');
+}
+
+// --------- FONCTIONS API --------- //
+// Search movies by name
+// IN --> Movie Name // OUT --> List of movies
+function searchMovie($movieName)
+{
+    $movienameURL = urlencode($movieName);
+    $url = "http://api.themoviedb.org/3/search/movie?query=". $movienameURL ."&api_key=". $GLOBALS['apikey'] ."&language=fr";
+    $options = array(
+      'method' => 'GET',
+    );
+    $request = drupal_http_request($url, $options);
+    $json = json_decode($request->data);
+    $results = $json->results;
+    $ret = '';
+    foreach($results as $movie) {
+        $ret .= '<div class="add_item-movie"><div class="add_item-img"><img src="http://image.tmdb.org/t/p/w370' . $movie->poster_path . '"></div><div class="add_item-infos"><h1>' . $movie->title . '</h1><p>' . $movie->overview .' </p></div>'. l(t("Add movie"), url("add_item"), array('query' => array('id' => $movie->id ))) .'</div>';
+    }
+    return $ret;
+}
+function getMovie($movieID)
+{
+    $movieidURL = urlencode($movieID);
+    $url = "http://api.themoviedb.org/3/movie/". $movieidURL ."?api_key=". $GLOBALS['apikey'] ."&language=fr";
+    $options = array(
+      'method' => 'GET',
+    );
+    $request = drupal_http_request($url, $options);
+    $infos = json_decode($request->data);
+    return $infos;
+}
