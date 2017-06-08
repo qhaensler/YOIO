@@ -1,6 +1,6 @@
 # YOIO - Drupal Module
 
-Insert movie node with a simple requete
+Insert movie node with a simple request
 
 ## Installation
 
